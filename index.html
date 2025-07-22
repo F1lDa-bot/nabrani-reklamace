@@ -300,6 +300,10 @@
         const modalMessage = document.getElementById('modal-message');
         const modalClose = document.getElementById('modal-close');
 
+        // DŮLEŽITÉ: Pro zprovoznění na GitHubu nebo jiném hostingu vložte sem svůj Google AI API klíč.
+        // Klíč získáte zdarma na https://aistudio.google.com/app/apikey
+        const apiKey = "AIzaSyAHnMJoLGBOZxv045gF8f4N2xZ7VPT5U64"; 
+
         function showModal(title, message) {
             modalTitle.textContent = title;
             modalMessage.textContent = message;
@@ -314,6 +318,12 @@
         });
 
         generateBtn.addEventListener('click', async () => {
+            // Check for API Key
+            if (apiKey === "VLOŽTE_SVŮJ_API_KLÍČ_ZDE" || !apiKey) {
+                showModal('Chybí API Klíč', 'Pro použití AI asistenta je nutné vložit platný Google AI API klíč do HTML souboru. Postupujte dle návodu.');
+                return;
+            }
+
             const notes = technicalNotes.value.trim();
             if (!notes) {
                 showModal('Chyba', 'Prosím, zadejte technické poznámky k opravě.');
@@ -329,7 +339,6 @@
             try {
                 let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
                 const payload = { contents: chatHistory };
-                const apiKey = ""; // API key will be provided by the environment
                 const apiUrl = \`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=\${apiKey}\`;
                 
                 const response = await fetch(apiUrl, {
@@ -339,7 +348,9 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Chyba API: ${response.statusText}`);
+                    const errorData = await response.json();
+                    console.error('API Error Response:', errorData);
+                    throw new Error(`Chyba API: ${errorData.error.message || response.statusText}`);
                 }
 
                 const result = await response.json();
@@ -356,7 +367,7 @@
 
             } catch (error) {
                 console.error('Gemini API Error:', error);
-                showModal('Chyba Spojení', `Došlo k chybě při komunikaci s AI asistentem. Zkontrolujte, zda je správně nastaven API klíč, a zkuste to znovu. Chyba: ${error.message}`);
+                showModal('Chyba Spojení', `Došlo k chybě při komunikaci s AI asistentem. Zkontrolujte, zda je API klíč správný a platný. Chyba: ${error.message}`);
             } finally {
                 loader.classList.add('hidden');
                 generateBtn.disabled = false;
@@ -364,7 +375,6 @@
         });
 
         copyBtn.addEventListener('click', () => {
-            // Using the deprecated execCommand for broader compatibility in iFrames
             geminiOutput.select();
             document.execCommand('copy');
             showModal('Zkopírováno', 'Text pro zákazníka byl zkopírován do schránky.');
